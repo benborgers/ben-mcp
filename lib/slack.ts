@@ -9,6 +9,24 @@ type SlackUser = {
 const api = "https://slack.com/api";
 const reviewChannel = "C09FG5PS9NH";
 const workspace = "owner-workspace-hq.slack.com";
+const allowedReviewerIds = new Set([
+  "U02T1C46B9N",
+  "U08V1BLNFTK",
+  "U0A4J6X7DB7",
+  "U0ABWUMNG6A",
+  "U0BAH4XNKMX",
+  "U0BGQDJMTK5",
+  "U09FES3JH47",
+  "U08C58S2P88",
+  "U0B9ZR8ANBZ",
+  "U09H717551T",
+  "U0ACT9LTQ5N",
+  "U08HVKULM7W",
+  "U09KS14BP6J",
+  "U03AB7MRGRF",
+  "U0A6CCX4QE9",
+  "U074R7YCZRD",
+]);
 const aliases: Record<string, string> = {
   matt: "Matt Tengtrakool",
   "matt t": "Matt Tengtrakool",
@@ -72,7 +90,7 @@ async function users() {
     result.push(...((response.members as SlackUser[]) ?? []));
     cursor = String((response.response_metadata as { next_cursor?: string } | undefined)?.next_cursor ?? "");
   } while (cursor);
-  return result.filter((user) => !user.deleted && !user.is_bot && user.id !== "USLACKBOT");
+  return result.filter((user) => !user.deleted && !user.is_bot && allowedReviewerIds.has(user.id));
 }
 
 export async function resolveReviewers(requested: string[]) {
