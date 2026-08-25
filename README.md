@@ -1,6 +1,6 @@
 # ben-mcp
 
-Ben Borgers's private MCP server, deployed at `mcp.ben.page` and restricted to `borgersbenjamin@gmail.com` through Google OAuth.
+Ben Borgers’ private MCP server, deployed at `mcp.ben.page` and restricted to `borgersbenjamin@gmail.com` through Google OAuth.
 
 ## Tools
 
