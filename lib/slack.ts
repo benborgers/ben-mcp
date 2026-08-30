@@ -1,3 +1,5 @@
+import { BenSlackClient } from "@/lib/slack-client";
+
 type SlackUser = {
   id: string;
   name?: string;
@@ -6,7 +8,6 @@ type SlackUser = {
   profile?: { real_name?: string; display_name?: string; real_name_normalized?: string; display_name_normalized?: string };
 };
 
-const api = "https://slack.com/api";
 const reviewChannel = "C09FG5PS9NH";
 const workspace = "owner-workspace-hq.slack.com";
 const allowedReviewerIds = new Set([
@@ -36,26 +37,8 @@ const aliases: Record<string, string> = {
   "ryan s": "Ryan Selden",
 };
 
-function credentials() {
-  const token = process.env.SLACK_XOXC;
-  const cookie = process.env.SLACK_XOXD;
-  if (!token || !cookie) throw new Error("Slack credentials are missing");
-  return { token, cookie };
-}
-
 async function call(method: string, params: Record<string, string> = {}) {
-  const { token, cookie } = credentials();
-  const response = await fetch(`${api}/${method}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
-      Cookie: `d=${cookie}`,
-    },
-    body: new URLSearchParams({ token, ...params }),
-  });
-  const json = await response.json() as { ok: boolean; error?: string; [key: string]: unknown };
-  if (!json.ok) throw new Error(`${method} failed: ${json.error ?? "unknown error"}`);
-  return json;
+  return new BenSlackClient().call(method, params);
 }
 
 function normalize(value: string) {

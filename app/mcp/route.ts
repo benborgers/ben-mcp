@@ -3,8 +3,26 @@ import { createMcpHandler, withMcpAuth } from "mcp-handler";
 import { z } from "zod";
 import { allowedEmail, scopes } from "@/lib/config";
 import { normalizeGist, normalizePrUrl } from "@/lib/review";
+import { readSlackThreadAsBen, searchSlackAsBen } from "@/lib/slack-read";
 import { postReviewRequest, resolveReviewers } from "@/lib/slack";
 import { verifyToken } from "@/lib/tokens";
+
+const slackAuthorSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().optional(),
+}).strict();
+
+const slackMessageSchema = z.object({
+  message_ref: z.string(),
+  timestamp: z.string(),
+  text: z.string(),
+  author: slackAuthorSchema,
+  conversation: z.object({ id: z.string(), name: z.string().optional() }).strict(),
+  permalink: z.string().url(),
+  thread_root_timestamp: z.string(),
+  is_reply: z.boolean(),
+  reply_count: z.number().int().nonnegative().optional(),
+}).strict();
 
 const handler = createMcpHandler((server) => {
   server.registerTool(
@@ -41,6 +59,88 @@ const handler = createMcpHandler((server) => {
           permalink: posted.permalink,
           reviewers: resolved.map(({ id, name }) => ({ id, name })),
         },
+      };
+    },
+  );
+
+  server.registerTool(
+    "search_slack_as_ben",
+    {
+      title: "Search Slack as Ben",
+      description: "Search every Slack conversation visible to Ben through his personal Slack session. Start here, then pass any result's opaque message_ref unchanged to read_slack_thread_as_ben. Supports Slack search syntax in query plus optional structured filters. This may return private Slack content.",
+      inputSchema: z.object({
+        query: z.string().trim().min(1).max(500).optional().describe("A Slack-style search query. Slack modifiers such as exact phrases, has:link, from:, in:, after:, and before: are accepted."),
+        keywords: z.array(z.string().trim().min(1).max(100)).max(20).optional().describe("Additional words or exact quoted phrases, combined with query and filters."),
+        author: z.string().trim().min(1).max(100).optional().describe("Slack username/handle for a from: filter; a leading @ is optional."),
+        conversation: z.string().trim().min(1).max(100).optional().describe("Channel or conversation name for an in: filter; a leading # is optional."),
+        after: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Only messages after this date (YYYY-MM-DD)."),
+        before: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Only messages before this date (YYYY-MM-DD)."),
+        sort: z.enum(["score", "timestamp"]).default("score"),
+        sort_direction: z.enum(["asc", "desc"]).default("desc"),
+        limit: z.number().int().min(1).max(100).default(25).describe("Messages per page."),
+        page: z.number().int().min(1).max(1000).default(1).describe("One-based Slack result page. Use next_page from a prior response."),
+      }).strict().refine((input) => Boolean(input.query || input.keywords?.length || input.author || input.conversation || input.after || input.before), {
+        message: "Provide query, keywords, author, conversation, after, or before.",
+      }),
+      outputSchema: z.object({
+        query: z.string(),
+        results: z.array(slackMessageSchema),
+        pagination: z.object({
+          page: z.number().int(),
+          page_size: z.number().int(),
+          total: z.number().int(),
+          total_pages: z.number().int(),
+          has_more: z.boolean(),
+          next_page: z.number().int().optional(),
+        }).strict(),
+      }).strict(),
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
+    async (input) => {
+      const result = await searchSlackAsBen(input);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+        structuredContent: result,
+      };
+    },
+  );
+
+  server.registerTool(
+    "read_slack_thread_as_ben",
+    {
+      title: "Read Slack thread as Ben",
+      description: "Read the root and replies for a Slack search hit using its message_ref. A reply reference is resolved to its root. A non-threaded message is returned as the root with no replies. Long threads return next_cursor for continuation. This may return private Slack content.",
+      inputSchema: z.object({
+        message_ref: z.string().min(1).max(1000).describe("The opaque message_ref from search_slack_as_ben. Pass it unchanged whether the hit is a root or reply."),
+        max_messages: z.number().int().min(1).max(1000).default(100).describe("Maximum total messages returned, including the root."),
+        cursor: z.string().min(1).max(2000).optional().describe("next_cursor from a prior response for the same message_ref."),
+      }).strict(),
+      outputSchema: z.object({
+        root: slackMessageSchema,
+        replies: z.array(slackMessageSchema),
+        pagination: z.object({
+          complete: z.boolean(),
+          returned_messages: z.number().int().positive(),
+          next_cursor: z.string().optional(),
+        }).strict(),
+      }).strict(),
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
+    async (input) => {
+      const result = await readSlackThreadAsBen(input);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+        structuredContent: result,
       };
     },
   );
