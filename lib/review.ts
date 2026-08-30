@@ -5,7 +5,7 @@ export function normalizePrUrl(value: string) {
 }
 
 export function normalizeGist(value: string) {
-  const gist = value.trim().replace(/\s+/g, " ").replace(/:+$/, "");
+  const gist = value.trim().replace(/\s+/g, " ").replace(/[.:]+$/, "");
   if (!gist) throw new Error("gist is required");
   return gist;
 }

@@ -32,7 +32,7 @@ const handler = createMcpHandler((server) => {
       description: "Post a review request for one owner/Owner GitHub pull request in Owner's #plg-review-requests Slack channel as Ben. Use the PR's concise gist and the natural names of the people Ben wants to review it. This sends a real Slack message.",
       inputSchema: z.object({
         pr_url: z.string().url().describe("The full GitHub URL for one owner/Owner pull request."),
-        gist: z.string().min(3).max(140).describe("A concise plain-English gist of what the PR changes. Do not include the PR URL, reviewer names, or a trailing colon."),
+        gist: z.string().min(3).max(140).describe("A concise plain-English gist of what the PR changes. Do not include the PR URL, reviewer names, or a trailing period or colon."),
         reviewers: z.array(z.string().min(1).max(100)).min(1).max(10).describe("Reviewer names as a human would say them, such as ['Matt', 'David S']. The server resolves these to real Slack users and refuses ambiguous matches."),
       }).strict(),
       outputSchema: z.object({
