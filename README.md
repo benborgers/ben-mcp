@@ -13,6 +13,7 @@ Inputs:
 - `pr_url`: full `owner/Owner` GitHub PR URL
 - `gist`: concise summary to place before the URL
 - `reviewers`: natural reviewer names, resolved to real Slack mentions
+- `review_level` (optional): `rubberstamp`, `medium`, or `deep`; prepends the corresponding `:review-please-<level>:` emoji to the Slack message
 
 ### `search_slack_as_ben`
 
