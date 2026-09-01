@@ -93,7 +93,7 @@ export async function resolveReviewers(requested: string[]) {
 }
 
 export async function postReviewRequest(text: string) {
-  const response = await call("chat.postMessage", { channel: reviewChannel, text });
+  const response = await call("chat.postMessage", { channel: reviewChannel, text, as_user: "true" });
   const ts = String(response.ts);
   return {
     channel: reviewChannel,
