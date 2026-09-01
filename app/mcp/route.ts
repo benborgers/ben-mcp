@@ -34,7 +34,7 @@ const handler = createMcpHandler((server) => {
         pr_url: z.string().url().describe("The full GitHub URL for one owner/Owner pull request."),
         gist: z.string().min(3).max(140).describe("A concise plain-English gist of what the PR changes. Do not include the PR URL, reviewer names, or a trailing period or colon."),
         reviewers: z.array(z.string().min(1).max(100)).min(1).max(10).describe("Reviewer names as a human would say them, such as ['Matt', 'David S']. The server resolves these to real Slack users and refuses ambiguous matches."),
-        review_level: z.enum(["rubberstamp", "medium", "deep"]).optional().describe("Optional requested review depth. Adds the corresponding review-please emoji to the beginning of the Slack message."),
+        review_level: z.enum(["rubberstamp", "medium", "deep"]).optional().describe("Optional requested review depth. Adds the corresponding please-review emoji to the beginning of the Slack message."),
       }).strict(),
       outputSchema: z.object({
         message: z.string(),
@@ -51,7 +51,7 @@ const handler = createMcpHandler((server) => {
     async ({ pr_url, gist, reviewers, review_level }) => {
       const url = normalizePrUrl(pr_url);
       const resolved = await resolveReviewers(reviewers);
-      const reviewPrefix = review_level ? `:review-please-${review_level}: ` : "";
+      const reviewPrefix = review_level ? `:please-review-${review_level}: ` : "";
       const message = `${reviewPrefix}${normalizeGist(gist)}: ${url}\n${resolved.map(({ id }) => `<@${id}>`).join(" ")}`;
       const posted = await postReviewRequest(message);
       return {
