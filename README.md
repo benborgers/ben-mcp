@@ -39,3 +39,8 @@ Accepts a `message_ref` from search. A reply hit is resolved to its root, and th
 ## Slack authentication caveat
 
 The tools call the supported `search.messages`, `conversations.replies`, and (for a non-threaded fallback) `conversations.history` Web API methods. However, Slack browser-session (`xoxc` plus `xoxd`) authentication is not a stable public app-auth contract. Sessions can expire, be revoked, or stop working if Slack changes its browser authentication. Authentication and Slack API failures are returned without exposing credentials; rate-limit errors include Slack's retry delay when provided. Search and reads can only return content currently visible to Ben, and inaccessible or deleted conversations/messages remain unavailable.
+### `get_calendar_events`
+
+Read both primary calendars (`ben.borgers@owner.com` and `borgersbenjamin@gmail.com`) for a `date` in `YYYY-MM-DD` format, interpreted in America/Los_Angeles. Includes overlapping, all-day and expanded recurring events, with source calendar labels. Both accounts must succeed; errors never masquerade as empty calendars. Duplicate invitations across accounts retain their source entries.
+
+Reuses the Google OAuth credentials already authorized through gog on the Mac Mini. Production requires `CALENDAR_GOOGLE_CLIENT_ID`, `CALENDAR_GOOGLE_CLIENT_SECRET`, `CALENDAR_WORK_REFRESH_TOKEN`, and `CALENDAR_PERSONAL_REFRESH_TOKEN`. These are distinct from the MCP login credentials and must remain secret. The tool only reads calendars, though the existing refresh tokens have broader scopes.
