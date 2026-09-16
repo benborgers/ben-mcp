@@ -15,6 +15,15 @@ Inputs:
 - `reviewers`: natural reviewer names, resolved to real Slack mentions
 - `review_level` (optional): `rubberstamp`, `medium`, or `deep`; prepends the corresponding `:please-review-<level>:` emoji to the Slack message
 
+### `send_message_as_ben`
+
+Sends a real Slack message from Ben's personal Slack account, not from a bot account. Recipients see the message as authored by Ben.
+
+Inputs:
+
+- `conversation_id`: Slack channel, private-channel, or direct-message conversation ID, available as `conversation.id` in Slack search results
+- `message`: message text; Slack mrkdwn and mention syntax are supported
+
 ### `search_slack_as_ben`
 
 Searches Slack with Ben's personal browser session, so results follow Ben's own conversation visibility rather than a bot's channel membership. `query` accepts Slack search syntax. Structured `keywords`, `author`, `conversation`, `after`, and `before` inputs can be combined with it. Results default to 25 per page (maximum 100) and include message, author, conversation, thread, timestamp, and permalink metadata.
@@ -38,7 +47,7 @@ Accepts a `message_ref` from search. A reply hit is resolved to its root, and th
 
 ## Slack authentication caveat
 
-The tools call the supported `search.messages`, `conversations.replies`, and (for a non-threaded fallback) `conversations.history` Web API methods. However, Slack browser-session (`xoxc` plus `xoxd`) authentication is not a stable public app-auth contract. Sessions can expire, be revoked, or stop working if Slack changes its browser authentication. Authentication and Slack API failures are returned without exposing credentials; rate-limit errors include Slack's retry delay when provided. Search and reads can only return content currently visible to Ben, and inaccessible or deleted conversations/messages remain unavailable.
+The tools call the supported `chat.postMessage`, `search.messages`, `conversations.replies`, and (for a non-threaded fallback) `conversations.history` Web API methods. However, Slack browser-session (`xoxc` plus `xoxd`) authentication is not a stable public app-auth contract. Sessions can expire, be revoked, or stop working if Slack changes its browser authentication. Authentication and Slack API failures are returned without exposing credentials; rate-limit errors include Slack's retry delay when provided. Search and reads can only return content currently visible to Ben, and inaccessible or deleted conversations/messages remain unavailable.
 ### `get_calendar_events`
 
 Read both primary calendars (`ben.borgers@owner.com` and `borgersbenjamin@gmail.com`) for a `date` in `YYYY-MM-DD` format, interpreted in America/Los_Angeles. Includes overlapping, all-day and expanded recurring events, with source calendar labels. Both accounts must succeed; errors never masquerade as empty calendars. Duplicate invitations across accounts retain their source entries.

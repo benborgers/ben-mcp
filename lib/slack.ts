@@ -101,3 +101,17 @@ export async function postReviewRequest(text: string) {
     permalink: `https://${workspace}/archives/${reviewChannel}/p${ts.replace(".", "")}`,
   };
 }
+
+export async function sendMessageAsBen(conversationId: string, message: string) {
+  const response = await call("chat.postMessage", {
+    channel: conversationId,
+    text: message,
+    as_user: "true",
+  });
+  const ts = String(response.ts);
+  return {
+    conversation_id: conversationId,
+    timestamp: ts,
+    permalink: `https://${workspace}/archives/${conversationId}/p${ts.replace(".", "")}`,
+  };
+}

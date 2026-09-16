@@ -5,7 +5,7 @@ import { z } from "zod";
 import { allowedEmail, scopes } from "@/lib/config";
 import { normalizeGist, normalizePrUrl } from "@/lib/review";
 import { readSlackThreadAsBen, searchSlackAsBen } from "@/lib/slack-read";
-import { postReviewRequest, resolveReviewers } from "@/lib/slack";
+import { postReviewRequest, resolveReviewers, sendMessageAsBen } from "@/lib/slack";
 import { verifyToken } from "@/lib/tokens";
 
 const slackAuthorSchema = z.object({
@@ -71,6 +71,36 @@ const handler = createMcpHandler((server) => {
           permalink: posted.permalink,
           reviewers: resolved.map(({ id, name }) => ({ id, name })),
         },
+      };
+    },
+  );
+
+  server.registerTool(
+    "send_message_as_ben",
+    {
+      title: "Send a Slack message from Ben",
+      description: "Send a real Slack message from Ben’s personal Slack account, not from a bot account. Recipients will see the message as authored by Ben. Use the conversation ID from Slack search results to target a channel, private channel, or direct message.",
+      inputSchema: z.object({
+        conversation_id: z.string().regex(/^[CDG][A-Z0-9]+$/).describe("The Slack conversation ID to send to, such as the conversation.id returned by search_slack_as_ben."),
+        message: z.string().min(1).max(40000).describe("The message to send. Slack mrkdwn and Slack mention syntax are supported."),
+      }).strict(),
+      outputSchema: z.object({
+        conversation_id: z.string(),
+        timestamp: z.string(),
+        permalink: z.string().url(),
+      }).strict(),
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
+    },
+    async ({ conversation_id, message }) => {
+      const result = await sendMessageAsBen(conversation_id, message);
+      return {
+        content: [{ type: "text", text: `Sent from Ben’s personal Slack account: ${result.permalink}` }],
+        structuredContent: result,
       };
     },
   );
